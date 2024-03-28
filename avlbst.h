@@ -9,8 +9,6 @@
 #include "bst.h"
 
 struct KeyError { };
-using namespace std;
-// NOTE: DELETE LATER
 
 /**
 * A special kind of node for an AVL tree, which adds the balance as a data member, plus
@@ -139,12 +137,11 @@ protected:
     virtual void nodeSwap( AVLNode<Key,Value>* n1, AVLNode<Key,Value>* n2);
 
     // Add helper functions here
-    int findBalance(AVLNode<Key, Value>* node);
     void insertFix(AVLNode<Key, Value>* p, AVLNode<Key, Value>* n);
-    void insertFixLeft(AVLNode<Key, Value>* n, AVLNode<Key, Value>* p, AVLNode<Key, Value>* g);
-    void insertFixRight(AVLNode<Key, Value>* n, AVLNode<Key, Value>* p, AVLNode<Key, Value>* g);
-    bool zigzig(AVLNode<Key, Value>* n);
-    bool zigzag(AVLNode<Key, Value>* n);
+    void insertFixLeft(AVLNode<Key, Value>* n, AVLNode<Key, Value>* p, AVLNode<Key, Value>* g); // Updates balances when p is a left node of its parent
+    void insertFixRight(AVLNode<Key, Value>* n, AVLNode<Key, Value>* p, AVLNode<Key, Value>* g); // Updates balances when p is a right node of its parent
+    bool zigzig(AVLNode<Key, Value>* n); // Checks if there is a zigzig case at the given node using its balances
+    bool zigzag(AVLNode<Key, Value>* n); // Checks if there is a zigzag case at the given node using its balances
     void rotateRight(AVLNode<Key, Value>* p);
     void rotateLeft(AVLNode<Key, Value>* p);
     void removeFix(AVLNode<Key, Value>* n, int diff);
@@ -169,6 +166,8 @@ void AVLTree<Key, Value>::insert(const std::pair<const Key, Value> &new_item)
     }
     AVLNode<Key, Value>* current = static_cast<AVLNode<Key,Value>*>(this->root_);
     AVLNode<Key, Value>* parent;
+
+    // Similar to bst insert, finding an empty node in the correct spot
     while(current)
     {
         if (new_item.first < current->getKey()) 
@@ -213,22 +212,21 @@ void AVLTree<Key, Value>::insertFix(AVLNode<Key, Value>* p, AVLNode<Key, Value>*
     if (!p->getParent()) return;
 
     AVLNode<Key, Value>* g = p->getParent();
-    if (g->getLeft() == p) 
-        insertFixLeft(n, p, g);
-    else if (g->getRight() == p) 
-        insertFixRight(n, p, g);
+    if (g->getLeft() == p) insertFixLeft(n, p, g);
+    else if (g->getRight() == p) insertFixRight(n, p, g);
 }
 
+/*
+* Helper function for insertFix
+* Updates balances when p is a left node of its parent
+*/
 template<class Key, class Value>
 void AVLTree<Key, Value>::insertFixLeft(AVLNode<Key, Value>* n, AVLNode<Key, Value>* p, AVLNode<Key, Value>* g)
 {
     g->setBalance(g->getBalance() - 1);
     if (g->getBalance() == 0) return;
-    else if (g->getBalance() == -1) 
-    {
-        insertFix(g, p);
-    }
-    else if (g->getBalance() == -2)
+    else if (g->getBalance() == -1) insertFix(g, p);
+    else if (g->getBalance() == -2) // When the subtree is unbalanced
     {
         if (zigzig(g))
         {
@@ -262,6 +260,10 @@ void AVLTree<Key, Value>::insertFixLeft(AVLNode<Key, Value>* n, AVLNode<Key, Val
     }
 }
 
+/*
+* Helper function for insertFix
+* Updates balances when p is a right node of its parent
+*/
 template<class Key, class Value>
 void AVLTree<Key, Value>::insertFixRight(AVLNode<Key, Value>* n, AVLNode<Key, Value>* p, AVLNode<Key, Value>* g)
 {
@@ -269,7 +271,7 @@ void AVLTree<Key, Value>::insertFixRight(AVLNode<Key, Value>* n, AVLNode<Key, Va
     g->setBalance(g->getBalance() + 1);
     if (g->getBalance() == 0) return;
     else if (g->getBalance() == 1) insertFix(g, p);
-    else if (g->getBalance() == 2)
+    else if (g->getBalance() == 2) // When the subtree is unbalanced
     {
         if (zigzig(g))
         {
@@ -303,14 +305,10 @@ void AVLTree<Key, Value>::insertFixRight(AVLNode<Key, Value>* n, AVLNode<Key, Va
     }
 }
 
-template<class Key, class Value>
-int AVLTree<Key, Value>::findBalance(AVLNode<Key, Value>* node)
-{
-    int lh = BinarySearchTree<Key, Value>::_getHeight(node->getLeft());
-    int rh = BinarySearchTree<Key, Value>::_getHeight(node->getRight());
-    return rh - lh;
-}
-
+/*
+* Helper function for the insert helper functions
+* Checks if there is a zigzig case at the given node using its balances
+*/
 template<class Key, class Value>
 bool AVLTree<Key, Value>::zigzig(AVLNode<Key, Value>* n)
 {
@@ -325,6 +323,10 @@ bool AVLTree<Key, Value>::zigzig(AVLNode<Key, Value>* n)
     return 0;
 }
 
+/*
+* Helper function for the insert helper functions
+* Checks if there is a zigzag case at the given node using its balances
+*/
 template<class Key, class Value>
 bool AVLTree<Key, Value>::zigzag(AVLNode<Key, Value>* n)
 {
@@ -346,6 +348,7 @@ void AVLTree<Key, Value>::rotateRight(AVLNode<Key, Value>* g)
     AVLNode<Key, Value>* pRight = p->getRight();
     AVLNode<Key, Value>* gParent = g->getParent();
 
+    // Updating necessary pointers and moving certain subtrees around
     p->setParent(gParent);
     if (gParent)
     {
@@ -356,6 +359,7 @@ void AVLTree<Key, Value>::rotateRight(AVLNode<Key, Value>* g)
     g->setParent(p);
     g->setLeft(pRight);
     if (pRight) pRight->setParent(g);
+
     if (this->root_ == g) this->root_ = p;
 }
 
@@ -366,6 +370,7 @@ void AVLTree<Key, Value>::rotateLeft(AVLNode<Key, Value>* g)
     AVLNode<Key, Value>* pLeft = p->getLeft();
     AVLNode<Key, Value>* gParent = g->getParent();
 
+    // Updating necessary pointers and moving certain subtrees around
     p->setParent(gParent);
     if (gParent)
     {
@@ -376,6 +381,7 @@ void AVLTree<Key, Value>::rotateLeft(AVLNode<Key, Value>* g)
     g->setParent(p);
     if (pLeft) pLeft->setParent(g);
     g->setRight(pLeft);
+
     if (this->root_ == g) this->root_ = p;
 }
 
@@ -394,12 +400,15 @@ void AVLTree<Key, Value>::remove(const Key& key)
     AVLNode<Key, Value>* pPred = nullptr; // Parent of the predecessor node
     int diff = 0;
 
-    if (n->getLeft() && n->getRight()) 
+
+    if (n->getLeft() && n->getRight()) // If there are two children nodes, swap with predecessor
     {
         AVLNode<Key, Value>* pred = static_cast<AVLNode<Key, Value>*>(this->predecessor(n));
         AVLNode<Key, Value>* pred_left = pred->getLeft();
         
         nodeSwap(n, pred);
+
+        // Getting the new parent of the removee and using whether it is a left/right child to update balances
         pPred = n->getParent();
         if (pPred->getLeft() == n) diff = 1;
         else if (pPred->getRight() == n) diff = -1;
@@ -416,9 +425,11 @@ void AVLTree<Key, Value>::remove(const Key& key)
         delete n;
         n = nullptr;
     }
-    else if (n->getLeft()) 
+    else if (n->getLeft()) // If there is only a left child, swap with it
     {
         nodeSwap(n, n->getLeft());
+
+        // Getting the new parent of the removee (which is just the old left node) and using whether it is a left/right child to update balances
         pPred = n->getParent();
         if (pPred->getLeft() == n) diff = 1;
         else if (pPred->getRight() == n) diff = -1;
@@ -434,9 +445,11 @@ void AVLTree<Key, Value>::remove(const Key& key)
         delete n;
         n = nullptr;
     }
-    else if (n->getRight()) 
+    else if (n->getRight()) // If there is only a right child, swap with it
     {
         nodeSwap(n, n->getRight());
+
+        // Getting the new parent of the removee (which is just the old right node) and using whether it is a left/right child to update balances
         pPred = n->getParent();
         if (pPred->getLeft() == n) diff = 1;
         else if (pPred->getRight() == n) diff = -1;
@@ -467,9 +480,9 @@ void AVLTree<Key, Value>::removeFix(AVLNode<Key, Value>* n, int diff)
         if (p->getLeft() == n) ndiff = 1;
         else ndiff = -1;
     }
-    if (diff == -1)
+    if (diff == -1) // Updates pointers accordingly when diff == -1 (removing a node on the right)
     {
-        if (n->getBalance() + diff == -2)
+        if (n->getBalance() + diff == -2) // When the subtree is unbalanced
         {
             AVLNode<Key, Value>* c = n->getLeft();
             if (c->getBalance() == -1)
@@ -521,9 +534,9 @@ void AVLTree<Key, Value>::removeFix(AVLNode<Key, Value>* n, int diff)
             removeFix(p, ndiff);
         }
     }
-    else if (diff == 1)
+    else if (diff == 1) // Updates pointers accordingly when diff == 1 (removing a node on the left)
     {
-        if (n->getBalance() + diff == 2)
+        if (n->getBalance() + diff == 2) // When the subtree is unbalanced
         {
             AVLNode<Key, Value>* c = n->getRight();
             if (c->getBalance() == 1)

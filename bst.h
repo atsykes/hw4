@@ -6,9 +6,6 @@
 #include <cstdlib>
 #include <utility>
 
-using namespace std;
-/*NOTE: DELETE THIS LATER (namespace)*/
-
 /**
  * A templated class for a Node in a search tree.
  * The getters for parent/left/right are virtual so
@@ -228,10 +225,6 @@ public:
         friend class BinarySearchTree<Key, Value>;
         iterator(Node<Key,Value>* ptr);
         Node<Key, Value> *current_;
-
-        //**NOTE: ASK IF ITERATOR CAN USE HELPER FUNCTIONS
-        //**NOTE: MOVE SUCCESSOR TO REGULAR BST CLASS AND MAKE ITERATOR CALL IT
-        //        MAKE SURE TO MAKE IT STATIC ASWELL
     };
 
 public:
@@ -241,8 +234,7 @@ public:
     Value& operator[](const Key& key);
     Value const & operator[](const Key& key) const;
 
-/* NOTE: Change to Protected*/
-public:
+protected:
     // Mandatory helper functions
     Node<Key, Value>* internalFind(const Key& k) const; // TODO
     Node<Key, Value> *getSmallestNode() const;  // TODO
@@ -255,17 +247,16 @@ public:
     virtual void nodeSwap( Node<Key,Value>* n1, Node<Key,Value>* n2) ;
 
     // Add helper functions here
-    void _insert(std::pair<Key, Value>& keyValuePair, Node<Key, Value>* current, Node<Key, Value>* parent);
-    static Node<Key, Value>* _rightMost(Node<Key, Value>* current);
-    static Node<Key, Value>* _walkUpPred(Node<Key, Value>* current);
-    void postOrderClear(Node<Key, Value>* root);
-    Node<Key, Value>* _getSmallestNode(Node<Key, Value>* current) const;
-    Node<Key, Value>* _internalFind(Node<Key, Value>* current, const Key& key) const;
-    bool _heightBalanced(const Node<Key, Value>* root) const;
+    static Node<Key, Value>* _rightMost(Node<Key, Value>* current); // Finds the right-most node of the subtree of the given node
+    static Node<Key, Value>* _walkUpPred(Node<Key, Value>* current); // Walks up the tree starting at the given node until it finds a right child
+    void postOrderClear(Node<Key, Value>* root); // Uses post-order traversal to clear the tree
+    Node<Key, Value>* _getSmallestNode(Node<Key, Value>* current) const; // Uses recursion to find the smallest node in the list
+    Node<Key, Value>* _internalFind(Node<Key, Value>* current, const Key& key) const; // Uses recursion to find the a certain node in the list
+    bool _heightBalanced(const Node<Key, Value>* root) const; // Uses recursion to ensure that the difference of the height of each subtree is not greater than 1
     static Node<Key, Value>* successor(Node<Key, Value>* current);
-    static Node<Key, Value>* _leftMost(Node<Key, Value>* current);
-    static Node<Key, Value>* _walkUpSucc(Node<Key, Value>* current);
-    int _getHeight(const Node<Key, Value>* root) const;
+    static Node<Key, Value>* _leftMost(Node<Key, Value>* current); // Finds the left-most node of the subtree of the given node
+    static Node<Key, Value>* _walkUpSucc(Node<Key, Value>* current); // Walks up the tree starting at the given node until it finds a left child
+    int _getHeight(const Node<Key, Value>* root) const; // Returns the height of the tree
 
 
 protected:
@@ -470,6 +461,8 @@ void BinarySearchTree<Key, Value>::insert(const std::pair<const Key, Value> &key
     {
         Node<Key, Value>* current = root_;
         Node<Key, Value>* parent;
+
+        // Traverses the tree, comparing values, until it finds an empty spot
         while(current)
         {
             if (keyValuePair.first < current->getKey()) 
@@ -489,28 +482,11 @@ void BinarySearchTree<Key, Value>::insert(const std::pair<const Key, Value> &key
             }
         }
 
+        // Makes a new node after ensuring that there is no other node with the same key
         Node<Key, Value>* node = new Node<Key, Value>(keyValuePair.first, keyValuePair.second, parent); 
         if (node->getKey() < parent->getKey()) parent->setLeft(node);
         else parent->setRight(node);
     }
-}
-
-// NOTE: DELETE THIS FUNCTION (UNUSED)
-template<class Key, class Value>
-void BinarySearchTree<Key, Value>::_insert(std::pair<Key, Value>& keyValuePair, Node<Key, Value>* current, Node<Key, Value>* parent)
-{
-    if (!current)
-    {
-        Node<Key, Value>* node = new Node<Key, Value>(keyValuePair.first, keyValuePair.second, nullptr);
-        if (node->getKey() < parent->getKey()) parent->setLeft(node);
-        else parent->setRight(node);
-        node->setParent(parent);
-        return;
-    }
-    
-    if (keyValuePair.first < current->getKey()) _insert(keyValuePair, current->getLeft(), current);
-    else if (keyValuePair.first > current->getKey()) _insert(keyValuePair, current->getRight(), current);
-    else current->setValue(keyValuePair.second);
 }
 
 /**
@@ -527,7 +503,7 @@ void BinarySearchTree<Key, Value>::remove(const Key& key)
     if (!current) return;
     bool isRoot = !current->getParent();
 
-    if (current->getLeft() && current->getRight()) 
+    if (current->getLeft() && current->getRight()) // If there are two children, swap with predecessor
     {
         Node<Key, Value>* pred = predecessor(current);
         Node<Key, Value>* pred_left = pred->getLeft();
@@ -547,7 +523,7 @@ void BinarySearchTree<Key, Value>::remove(const Key& key)
         delete current;
         current = nullptr;
     }
-    else if (current->getLeft()) 
+    else if (current->getLeft()) // If there is only a left child, swap with it
     {
         nodeSwap(current, current->getLeft());
         if (isRoot) root_ = current->getParent();
@@ -561,7 +537,7 @@ void BinarySearchTree<Key, Value>::remove(const Key& key)
         delete current;
         current = nullptr;
     }
-    else if (current->getRight()) 
+    else if (current->getRight()) // If there is only a right child, swap with it
     {
         nodeSwap(current, current->getRight());
         if (isRoot) root_ = current->getParent();
@@ -579,6 +555,10 @@ void BinarySearchTree<Key, Value>::remove(const Key& key)
     if (empty()) root_ = nullptr;
 }
 
+
+/*
+* Finds the node that is before the current one in the ordered list
+*/
 template<class Key, class Value>
 Node<Key, Value>* BinarySearchTree<Key, Value>::predecessor(Node<Key, Value>* current)
 {
@@ -589,6 +569,10 @@ Node<Key, Value>* BinarySearchTree<Key, Value>::predecessor(Node<Key, Value>* cu
     else return nullptr;
 }
 
+/*
+* Helper for the predecessor member function
+* Finds the right-most node of the subtree of the given node
+*/
 template<class Key, class Value>
 Node<Key, Value>* BinarySearchTree<Key, Value>::_rightMost(Node<Key, Value>* current)
 {
@@ -596,6 +580,10 @@ Node<Key, Value>* BinarySearchTree<Key, Value>::_rightMost(Node<Key, Value>* cur
     else return _rightMost(current->getRight());
 }
 
+/*
+* Helper for the predecessor member function
+* Walks up the tree starting at the given node until it finds a right child
+*/
 template<class Key, class Value>
 Node<Key, Value>* BinarySearchTree<Key, Value>::_walkUpPred(Node<Key, Value>* current)
 {
@@ -605,6 +593,9 @@ Node<Key, Value>* BinarySearchTree<Key, Value>::_walkUpPred(Node<Key, Value>* cu
     return _walkUpPred(current->getParent());
 }
 
+/*
+* Finds the node that is after the current one in the ordered list
+*/
 template<class Key, class Value>
 Node<Key, Value>* BinarySearchTree<Key, Value>::successor(Node<Key, Value>* current)
 {
@@ -614,6 +605,10 @@ Node<Key, Value>* BinarySearchTree<Key, Value>::successor(Node<Key, Value>* curr
     else return _walkUpSucc(current);
 }
 
+/*
+* Helper for the successpr member function
+* Finds the left-most node of the subtree of the given node
+*/
 template<class Key, class Value>
 Node<Key, Value>* BinarySearchTree<Key, Value>::_leftMost(Node<Key, Value>* current)
 {
@@ -621,6 +616,10 @@ Node<Key, Value>* BinarySearchTree<Key, Value>::_leftMost(Node<Key, Value>* curr
     else return _leftMost(current->getLeft());
 }
 
+/*
+* Helper for the successor member function
+* Walks up the tree starting at the given node until it finds a left child
+*/
 template<class Key, class Value>
 Node<Key, Value>* BinarySearchTree<Key, Value>::_walkUpSucc(Node<Key, Value>* current)
 {
@@ -640,6 +639,10 @@ void BinarySearchTree<Key, Value>::clear()
     postOrderClear(root_);
 }
 
+/*
+* Helper for the clear member function
+* Uses post-order traversal to clear the tree
+*/
 template<typename Key, typename Value>
 void BinarySearchTree<Key, Value>::postOrderClear(Node<Key, Value>* root)
 {
@@ -662,6 +665,11 @@ Node<Key, Value>* BinarySearchTree<Key, Value>::getSmallestNode() const
     return _getSmallestNode(root_);
 }
 
+/*
+* Helper function for the getSmallestNode function
+* Uses recursion to find the smallest node in the list
+* (Similar to the _leftMost helper function)
+*/
 template<typename Key, typename Value>
 Node<Key, Value>* BinarySearchTree<Key, Value>::_getSmallestNode(Node<Key, Value>* current) const
 {
@@ -682,6 +690,10 @@ Node<Key, Value>* BinarySearchTree<Key, Value>::internalFind(const Key& key) con
     return _internalFind(root_, key);
 }
 
+/*
+* Helper function for the internalFind function
+* Uses recursion to find the a certain node in the list
+*/
 template<typename Key, typename Value>
 Node<Key, Value>* BinarySearchTree<Key, Value>::_internalFind(Node<Key, Value>* current, const Key& key) const
 {
@@ -703,6 +715,10 @@ bool BinarySearchTree<Key, Value>::isBalanced() const
     return _heightBalanced(root_);
 }
 
+/*
+* Helper function for the isBalanced member function
+* Uses recursion to ensure that the difference of the height of each subtree is not greater than 1
+*/
 template<typename Key, typename Value>
 bool BinarySearchTree<Key, Value>::_heightBalanced(const Node<Key, Value>* root) const
 {
@@ -715,6 +731,10 @@ bool BinarySearchTree<Key, Value>::_heightBalanced(const Node<Key, Value>* root)
     else return 0;
 }
 
+/*
+* Helper function for _heightBalanced
+* Finds the height of a given subtree
+*/
 template<typename Key, typename Value>
 int BinarySearchTree<Key, Value>::_getHeight(const Node<Key, Value>* root) const
 {
