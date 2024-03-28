@@ -28,5 +28,7 @@ struct Node {
  * @param root Pointer to the root of the tree to check for equal paths
  */
 bool equalPaths(Node * root);
+int _checkLeafPaths(const Node* root, int h);
+bool _isLeaf(const Node* n);
 
 #endif
